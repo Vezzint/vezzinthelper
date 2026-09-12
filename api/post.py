@@ -417,29 +417,44 @@ def run_posting():
 # ==================== VERCEL HANDLER ====================
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
-        secret = os.getenv("CRON_SECRET", "")
-        if secret:
-            from urllib.parse import urlparse, parse_qs
-            query = parse_qs(urlparse(self.path).query)
-            if query.get("secret", [""])[0] != secret:
-                self.send_response(403)
-                self.send_header("Content-type", "application/json")
-                self.end_headers()
-                self.wfile.write(json.dumps({"error": "Forbidden"}).encode())
-                return
+        try:
+            secret = os.getenv("CRON_SECRET", "")
+            if secret:
+                from urllib.parse import urlparse, parse_qs
+                query = parse_qs(urlparse(self.path).query)
+                if query.get("secret", [""])[0] != secret:
+                    self._respond(403, {"error": "Forbidden"})
+                    return
+            
+            try:
+                ok, message = run_posting()
+            except Exception as e:
+                ok, message = False, f"Критическая ошибка: {e}"
+            
+            self._respond(200 if ok else 500, {
+                "success": ok,
+                "message": message,
+                "timestamp": datetime.now().isoformat()
+            })
         
-        ok, message = run_posting()
+        except Exception as e:
+            try:
+                self._respond(500, {"success": False, "error": str(e)})
+            except:
+                pass
+    
+    def _respond(self, status, data):
+        """Безопасная отправка JSON-ответа"""
+        try:
+            body = json.dumps(data, ensure_ascii=False).encode('utf-8')
+        except Exception:
+            body = b'{"error": "encoding failed"}'
         
-        self.send_response(200 if ok else 500)
-        self.send_header("Content-type", "application/json")
+        self.send_response(status)
+        self.send_header("Content-type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
         self.end_headers()
-        
-        response = {
-            "success": ok,
-            "message": message,
-            "timestamp": datetime.now().isoformat()
-        }
-        self.wfile.write(json.dumps(response, ensure_ascii=False).encode())
+        self.wfile.write(body)
     
     def do_POST(self):
         self.do_GET()

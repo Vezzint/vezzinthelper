@@ -3,12 +3,12 @@ name = "vezzinthelper"
 version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
-    "aiogram==3.13.1",
-    "mistralai==2.0.0",
-    "python-dotenv==1.0.1",
-    "requests==2.32.3",
-    "feedparser==6.0.11",
-    "sulguk==0.11.1",
+    "aiogram>=3.20.0",
+    "mistralai>=2.0.0",
+    "python-dotenv>=1.0.1",
+    "requests>=2.32.3",
+    "feedparser>=6.0.11",
+    "sulguk>=0.11.1",
 ]
 
 [tool.vercel]
